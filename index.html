@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astronaut-Assist Robot · Thesis Roadmap</title>
+<style>
+:root{
+  --bg:#0a0d14; --bg2:#0e131d; --card:#131927; --card2:#0f1420; --line:#232c3d; --line2:#2e3a50;
+  --text:#e7eaf0; --muted:#8d97aa; --faint:#5d6779; --accent:#7aa2ff;
+  --c-core:#7aa2ff; --c-proposal:#f2b155; --c-aim:#4fd1a5; --c-stretch:#b48cff;
+  --c-build:#56c2e6; --c-plan:#f08ba0; --c-output:#ffd166; --c-ref:#a5b4c8; --c-decision:#ff7b72;
+  --s-idea:#b48cff; --s-todo:#6b778c; --s-doing:#f2b155; --s-done:#4fd1a5; --s-note:#56c2e6;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+
+/* ---------- toolbar ---------- */
+#bar{position:fixed;top:0;left:0;right:0;height:58px;display:flex;align-items:center;gap:14px;padding:0 16px;
+  background:rgba(10,13,20,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:20}
+#brand{display:flex;flex-direction:column;min-width:0;flex:0 1 auto}
+#brand b{font-size:15px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#brand span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#search{flex:1 1 260px;max-width:380px;margin-left:auto;position:relative}
+#search input{width:100%;height:34px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2);padding:0 12px 0 32px;outline:none}
+#search input:focus{border-color:var(--accent)}
+#search svg{position:absolute;left:10px;top:9px;opacity:.55}
+.btns{display:flex;gap:6px;align-items:center}
+.btn{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line2);background:var(--card);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:#41506b;background:#182033}
+.btn.icon{width:34px;padding:0;justify-content:center}
+.btn.on{background:var(--accent);border-color:var(--accent);color:#0a0d14;font-weight:600}
+.btn.danger{color:#ff8f87}
+.btn.primary{background:var(--accent);color:#0a0d14;border-color:var(--accent);font-weight:600}
+.menu{position:relative}
+.menu-list{position:absolute;right:0;top:40px;background:var(--card);border:1px solid var(--line2);border-radius:11px;padding:6px;min-width:230px;display:none;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.menu.open .menu-list{display:block}
+.menu-list button{display:block;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:13px}
+.menu-list button:hover{background:#1b2436}
+.menu-list small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.sep{height:1px;background:var(--line);margin:5px 4px}
+
+/* ---------- canvas ---------- */
+#vp{position:fixed;top:58px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none;
+  background-color:var(--bg);background-image:radial-gradient(circle, #1c2435 1.2px, transparent 1.3px)}
+#vp.panning{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#edges,#elabels{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+#elabels{z-index:2}
+#edges path{fill:none;stroke:#34405a;stroke-width:1.6;stroke-dasharray:6 6;vector-effect:non-scaling-stroke}
+#edges path.hot{stroke:var(--accent);stroke-dasharray:none;stroke-width:2.2}
+#elabels text{fill:var(--muted);font-size:min(calc(12px * var(--inv)), 44px);paint-order:stroke;stroke:var(--bg);stroke-width:calc(5px * var(--inv));text-anchor:middle;font-family:var(--font)}
+
+.node{position:absolute;width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;transition:opacity .2s, box-shadow .2s}
+.node::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.node.sel{box-shadow:0 0 0 3px var(--c), 0 20px 60px rgba(0,0,0,.45)}
+.node.dim{opacity:.18}
+.node-head{padding:20px 24px 8px;cursor:pointer}
+.edit .node-head{cursor:move}
+.cat{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--c);font-weight:700}
+.node-title{font-size:24px;font-weight:700;margin:4px 0 8px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted)}
+.prog .track{flex:1;height:5px;border-radius:5px;background:#1f2738;overflow:hidden}
+.prog .fill{height:100%;background:var(--c);border-radius:5px}
+.summary{margin:2px 24px 10px;font-size:14px;line-height:1.5;color:#b9c1cf;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;height:63px}
+.summary strong{color:var(--text)}
+.kids{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 24px 22px}
+.kid{position:relative;background:var(--card2);border:1px solid #20293a;border-radius:13px;padding:11px 13px 10px 26px;height:84px;cursor:pointer;overflow:hidden;transition:border-color .15s, background .15s}
+.kid:hover{border-color:#3a4862;background:#121a28}
+.kid.sel{border-color:var(--c);background:#141d2d}
+.kid.hit{border-color:var(--output, #ffd166);box-shadow:inset 0 0 0 1px #ffd16688}
+.kid .dot{position:absolute;left:11px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--s-note)}
+.kid-title{font-size:13.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:16px}
+.kid-teaser{font-size:12px;line-height:1.45;color:var(--muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kid .ni{position:absolute;right:10px;top:11px;opacity:.6}
+.addkid{display:none;border:1px dashed #33405a;border-radius:13px;height:84px;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:13px;background:transparent}
+.edit .addkid{display:flex}
+.addkid:hover{border-color:var(--c);color:var(--text)}
+
+/* far zoom: big titles */
+.far-title{display:none;position:absolute;inset:4px 0 0 0;background:var(--card);padding:28px 34px;flex-direction:column;justify-content:center;gap:calc(8px * var(--inv));cursor:pointer}
+.far .far-title{display:flex}
+.far-title .cat{font-size:min(calc(11px * var(--inv)), 40px)}
+.far-title .ft{font-size:min(calc(21px * var(--inv)), 64px);font-weight:800;line-height:1.12}
+.far-title .fm{font-size:min(calc(12px * var(--inv)), 34px);color:var(--muted)}
+
+/* ---------- panel ---------- */
+#panel{position:fixed;top:58px;right:0;bottom:0;width:460px;max-width:100vw;background:var(--bg2);border-left:1px solid var(--line);
+  transform:translateX(100%);transition:transform .25s ease;z-index:15;display:flex;flex-direction:column}
+#panel.open{transform:none}
+#ph{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+#ph .crumb{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ph .crumb a{color:var(--muted);cursor:pointer;text-decoration:none}
+#ph .crumb a:hover{color:var(--text)}
+#pb{flex:1;overflow:auto;padding:18px 22px 40px}
+#pb h2{margin:6px 0 10px;font-size:22px;line-height:1.25}
+#pb h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.md{font-size:14.5px;line-height:1.62;color:#d3d8e2}
+.md p{margin:0 0 10px}
+.md ul,.md ol{margin:0 0 10px;padding-left:20px}
+.md li{margin:3px 0}
+.md code{font-family:var(--mono);font-size:12.5px;background:#182033;border:1px solid #243049;padding:1px 5px;border-radius:5px;word-break:break-word}
+.md strong{color:#fff}
+.md h4{margin:14px 0 6px;font-size:14px}
+.notes{background:#121a28;border:1px solid #223049;border-left:3px solid var(--c, var(--accent));border-radius:10px;padding:12px 14px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--line2);color:var(--muted);text-transform:capitalize}
+.chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.list{display:flex;flex-direction:column;gap:6px}
+.li{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--card2);font-size:13.5px}
+.li:hover{border-color:#3a4862}
+.li i{width:8px;height:8px;border-radius:50%;flex:none}
+.li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li small{color:var(--faint)}
+.pnav{display:flex;gap:8px;margin-top:24px}
+.pnav .btn{flex:1;justify-content:center}
+label.f{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;letter-spacing:.02em}
+.inp{width:100%;background:var(--card2);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none;font-size:14px}
+.inp:focus{border-color:var(--accent)}
+textarea.inp{min-height:110px;resize:vertical;line-height:1.5;font-family:var(--mono);font-size:12.5px}
+textarea.inp.tall{min-height:220px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hint{font-size:11.5px;color:var(--faint);margin-top:5px}
+.empty{color:var(--faint);font-size:13px;font-style:italic}
+
+/* ---------- misc ---------- */
+#legend{position:fixed;left:14px;bottom:14px;z-index:10;background:rgba(14,19,29,.9);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 12px;max-width:min(560px, calc(100vw - 28px))}
+#legend .lg{display:flex;align-items:center;gap:6px;cursor:pointer}
+#legend .lg:hover{color:var(--text)}
+#legend .lg i{width:9px;height:9px;border-radius:3px}
+#legend .zl{width:100%;display:flex;justify-content:space-between;color:var(--faint);border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+#zoomctl{position:fixed;right:14px;bottom:14px;z-index:10;display:flex;flex-direction:column;gap:6px;transition:right .25s}
+body.panel-open #zoomctl{right:474px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#1c2639;border:1px solid var(--line2);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:40}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#help{position:fixed;inset:0;background:rgba(5,7,12,.7);z-index:50;display:none;align-items:center;justify-content:center}
+#help.open{display:flex}
+#help .box{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;padding:24px 28px;max-width:560px;width:calc(100% - 32px);max-height:85vh;overflow:auto}
+#help h2{margin:0 0 12px}
+#help table{width:100%;border-collapse:collapse;font-size:13.5px}
+#help td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+#help td:first-child{color:var(--muted);width:42%;padding-right:12px}
+kbd{font-family:var(--mono);font-size:11.5px;background:#1b2436;border:1px solid #2c3850;border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+.editbadge{display:none;font-size:11px;font-weight:700;letter-spacing:.08em;color:#0a0d14;background:var(--c-proposal);padding:3px 8px;border-radius:6px}
+body.edit .editbadge{display:inline-block}
+@media (max-width:760px){
+  #brand span{display:none}
+  .btn .lbl{display:none}
+  #panel{width:100vw}
+  body.panel-open #zoomctl{display:none}
+  #legend{display:none}
+}
+</style>
+</head>
+<body>
+<header id="bar">
+  <div id="brand"><b id="t-title">Roadmap</b><span id="t-sub"></span></div>
+  <span class="editbadge">EDITING</span>
+  <div id="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" placeholder="Search everything…  ( / )" autocomplete="off">
+  </div>
+  <div class="btns">
+    <button class="btn" id="b-fit" title="Fit all (F)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="lbl">Overview</span></button>
+    <button class="btn" id="b-add" style="display:none" title="Add a new section"><span>＋</span><span class="lbl">Section</span></button>
+    <button class="btn" id="b-edit" title="Toggle edit mode (E)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="lbl">Edit</span></button>
+    <div class="menu" id="m-file">
+      <button class="btn icon" id="b-menu" title="Save / export"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      <div class="menu-list">
+        <button data-m="html">Download updated index.html<small>Bakes your edits into the file - commit this to GitHub</small></button>
+        <button data-m="json">Export data (.json)</button>
+        <button data-m="import">Import data (.json)…</button>
+        <div class="sep"></div>
+        <button data-m="reset">Discard local edits<small>Revert to the version in the published file</small></button>
+        <div class="sep"></div>
+        <button data-m="help">Help & shortcuts</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+</header>
+
+<div id="vp"><div id="world"><svg id="edges"></svg><svg id="elabels"></svg></div></div>
+
+<aside id="panel">
+  <div id="ph">
+    <div class="crumb" id="crumb"></div>
+    <button class="btn icon" id="p-close" title="Close (Esc)">✕</button>
+  </div>
+  <div id="pb"></div>
+</aside>
+
+<div id="legend"></div>
+<div id="zoomctl">
+  <button class="btn icon" id="z-in" title="Zoom in">＋</button>
+  <button class="btn icon" id="z-out" title="Zoom out">－</button>
+</div>
+<div id="toast"></div>
+<div id="help"><div class="box">
+  <h2>How to use this roadmap</h2>
+  <table>
+    <tr><td>Zoom</td><td>Scroll / pinch, or <kbd>+</kbd> <kbd>−</kbd>. Zoomed out shows section titles; zoom in to see cards.</td></tr>
+    <tr><td>Pan</td><td>Drag the background</td></tr>
+    <tr><td>Focus a section</td><td>Click its header</td></tr>
+    <tr><td>Open a card</td><td>Click it. Full details and discussion notes open on the right.</td></tr>
+    <tr><td>Overview</td><td><kbd>F</kbd> or <kbd>Esc</kbd> (when the panel is closed)</td></tr>
+    <tr><td>Search</td><td><kbd>/</kbd>, then <kbd>Enter</kbd> to jump to the first match</td></tr>
+    <tr><td>Edit mode</td><td><kbd>E</kbd>. Edit text in the panel, drag section headers to move them, add cards, sections and links.</td></tr>
+    <tr><td>Text formatting</td><td><code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, <code>- list</code>, <code>1. list</code>, <code>[text](https://…)</code>, <code>#### heading</code></td></tr>
+    <tr><td>Saving</td><td>Edits autosave in this browser only. To publish them, use <b>⋯ → Download updated index.html</b> and commit that file to your GitHub repo.</td></tr>
+  </table>
+  <div style="text-align:right;margin-top:16px"><button class="btn primary" onclick="document.getElementById('help').classList.remove('open')">Got it</button></div>
+</div></div>
+
+<script>window.ROADMAP = /*DATA_START*/{
+ "meta": {
+  "title": "Astronaut-Assist Robot - Thesis Roadmap",
+  "subtitle": "AI-based voice command for a UR5e astronaut-assist arm · NSTGRO27",
+  "updated": 1794970241919
+ },
+ "nodes": [
+  {
+   "id": "proposal",
+   "cat": "proposal",
+   "title": "NSTGRO27 Proposal",
+   "summary": "Mandatory preliminary proposal due **Dec 9, 2026, 6:00 pm ET**. Full proposal (invite only) target Mar 18, 2027. The prelim is what to focus on right now.",
+   "notes": "\n**Original draft (\"Project 4\")** framed the work as: train an NLP model on a constrained command set for fine-motion control (\"move a little left - just a bit more\"), light/camera/tool positioning, eye-tracking as future work, 1-year timeline (8 + 3 + 3 months), Trossen or UR5e arm, success = \"any voice-commanded arm motion via AI interpreter.\"\n\n**Verdict from our review:** the *idea* is strong and focused; the *writing* needs the most work. Biggest fixes: measurable success criteria, modern framing (fine-tune / leverage foundation models, not train from scratch), honest SOA, and elevating the coordinate-frame sentence into the centerpiece.\n\nAlways verify dates and page limits in the official solicitation on NSPIRES - third-party summaries were used here.\n",
+   "children": [
+    {
+     "id": "p-dates",
+     "title": "Key dates",
+     "status": "todo",
+     "body": "- **Dec 9, 2026, 6:00 pm ET** - mandatory preliminary proposal\n- **~Feb 17, 2027** - invitations for full proposals\n- **Mar 18, 2027, 6:00 pm ET** - full proposals (invited only, target date)\n- **Mar 22, 2027** - letters of recommendation\n- Solicitation: NNH26ZTR001N-26NSTGRO-B4 on NSPIRES",
+     "notes": ""
+    },
+    {
+     "id": "p-check",
+     "title": "Before Dec 9 checklist",
+     "status": "todo",
+     "body": "- Confirm advisor is on board (advisor is PI; award goes to the university)\n- Read the NSTGRO27 solicitation on NSPIRES: page limits, required sections\n- Lock the research question (see Research Core)\n- Map to STMD Technology Taxonomy: **TX04 Robotic Systems**, **TX10 Autonomous Systems**\n- Cite relevant STMD Civil Space Shortfalls\n- Rewrite in *your* voice - this is your fellowship, not a lab project list",
+     "notes": ""
+    },
+    {
+     "id": "p-c1",
+     "title": "Fix: success criterion too weak",
+     "status": "todo",
+     "body": "\"Any voice-commanded arm motion via AI interpreter\" is a weekend demo in 2026 (Whisper + LLM + MoveIt). Replace with measurable targets:\n- Interpretation accuracy >= X% on N held-out phrasings\n- Light/tool reaches target within X mm in <= Y corrections or Z s\n- End-of-speech to motion-start < X ms; hard stop < Y ms\n- Task time and NASA-TLX vs. teach pendant / joystick / second human",
+     "notes": ""
+    },
+    {
+     "id": "p-c2",
+     "title": "Fix: \"train for 8 months\" is outdated",
+     "status": "todo",
+     "body": "Training a command model from scratch was a 2018 approach. Pretrained ASR + LLMs already understand \"move a little left.\"\n\n**Reframe:** the research is turning vague, relative, context-dependent spatial language into safe, precise motion on flight-plausible hardware. Suggested wording: *\"Develop a spatial-command dataset (synthetic plus recorded speech) and fine-tune an onboard small language model, benchmarked against few-shot prompting and a large cloud model.\"*",
+     "notes": ""
+    },
+    {
+     "id": "p-c3",
+     "title": "Fix: risky state-of-the-art claims",
+     "status": "todo",
+     "body": "\"Nothing like this in space\" / \"no groups working on space applications\" will be challenged:\n- **ROSA** (NASA JPL) - natural-language agent for ROS robots\n- **CIMON** - voice assistant flown on ISS (2018)\n- **Callisto** - voice assistant on Artemis I\n- **Astrobee** - robotic assistants on ISS\n\nHonest gap: none does *continuous, iterative fine positioning by voice in the user's own frame of reference*.",
+     "notes": ""
+    },
+    {
+     "id": "p-c4",
+     "title": "Elevate: the coordinate-frame sentence",
+     "status": "todo",
+     "body": "\"Verbally select in real time the coordinate system\" is the gem of the proposal. Expand it into the centerpiece: no gravity-defined *up* in microgravity; \"left\" = robot's, astronaut's, camera's or workpiece's? Requires tracking the user's pose (ties the depth camera in). Plus vague quantifiers and dialog state.",
+     "notes": ""
+    },
+    {
+     "id": "p-c5",
+     "title": "Add: safety and latency",
+     "status": "todo",
+     "body": "- \"Stop\" must be a direct keyword path that bypasses the LLM\n- Every LLM output bounded: max step, workspace limits, speed limits near the user\n- State that it runs onboard, without cloud (deep-space comm latency)",
+     "notes": ""
+    },
+    {
+     "id": "p-c6",
+     "title": "Fix: timeline and scope",
+     "status": "todo",
+     "body": "- 8 + 3 + 3 = 14 months in a \"short one-year timeframe\" - and the thesis is two years. Lay out the plan over your real degree length (check NSTGRO award duration).\n- Commit to the **UR5e** - \"Trossen or UR5e\" reads as indecision.\n- Eye-tracking stays future work; pointing can be an intermediate step.",
+     "notes": ""
+    },
+    {
+     "id": "p-c7",
+     "title": "Fix: tone and voice",
+     "status": "todo",
+     "body": "Remove hedges: \"Pitfalls abound\", \"we will hope to\", \"it is obvious that\", \"the beginnings of such a capability.\"\n\nReplace with: *\"The key risk is X; we mitigate it by Y.\"* Remove lab-list framing (\"Project 4\", HOME STRI aims) and write as your research plan. Tie to concrete crew tasks: ISS maintenance, Gateway, lunar habitats (HOME).",
+     "notes": ""
+    },
+    {
+     "id": "p-c8",
+     "title": "Use the paper plan in the proposal",
+     "status": "idea",
+     "body": "Listing 2-3 planned publications (see Papers) signals a productive plan to reviewers.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "core",
+   "cat": "core",
+   "title": "Research Core",
+   "summary": "Iterative, conversational voice commands to precisely position a light/camera/tool, interpreted in the astronaut's own frame, fully onboard.",
+   "notes": "\nPlan evolution: the early game plan was bottom-up (learn tools -> add hardware -> figure out AI). The proposal turned out narrower and better: voice-commanded fine positioning with relative commands. Object detection and pointing became secondary; the camera's main job became tracking the user's pose for frame resolution.\n",
+   "children": [
+    {
+     "id": "c-obj",
+     "title": "Overall objective",
+     "status": "note",
+     "body": "Enable a hands-busy astronaut to precisely position a light, camera or tool with a robot arm (UR5e) through **iterative, conversational voice commands**, interpreted **in the astronaut's own frame of reference** and run **entirely onboard**.",
+     "notes": ""
+    },
+    {
+     "id": "c-rq",
+     "title": "Central research question",
+     "status": "note",
+     "body": "How can vague, relative spoken spatial commands (\"a little left - bit more - stop\") be reliably turned into safe, precise robot motion when \"left\" and \"up\" depend on the speaker's orientation, as in microgravity, and when only onboard compute is available?",
+     "notes": ""
+    },
+    {
+     "id": "c-gap",
+     "title": "The gap (novelty claim)",
+     "status": "note",
+     "body": "Existing systems are **one-shot**: one command, one action (ROSA, Callisto, CIMON, Code as Policies). None supports a continuing correction loop for fine positioning in the user's frame of reference. Pick one main angle + one supporting angle for the thesis.",
+     "notes": ""
+    },
+    {
+     "id": "c-loop",
+     "title": "What \"closed-loop\" means here",
+     "status": "note",
+     "body": "Control-theory sense, with the **astronaut as the feedback path**: astronaut sees the light -> \"a little left\" -> arm moves -> \"bit more... stop\". Human = sensor + controller; robot = actuator; speech = control signal.\n\n- Latency = loop delay (lag causes over-correction)\n- Step size = gain (too big -> oscillation, too small -> slow)\n- Convergence is measurable: corrections, time to target, overshoot\n- History is part of the loop (\"bit more\" refers to the last command)\n\nSecond possible loop: robot-side, camera tracks the light spot (later aim).",
+     "notes": "**Writing tip:** controls reviewers read \"closed-loop\" as robot-side feedback. Define it once (\"closed-loop, with the astronaut providing visual feedback through iterative spoken corrections\") or say \"iterative / conversational fine positioning.\""
+    },
+    {
+     "id": "c-ug",
+     "title": "Why microgravity makes it harder",
+     "status": "note",
+     "body": "No gravity-defined \"up\"; astronauts float in any orientation. On Earth gravity resolves half the frame ambiguity for free. This is what makes the problem specifically about space - make it explicit.",
+     "notes": ""
+    },
+    {
+     "id": "c-uses",
+     "title": "Space use cases",
+     "status": "note",
+     "body": "- ISS maintenance and inspection\n- Connector mating, cable routing, holding tools\n- Lighting a work area / camera positioning\n- Gateway, lunar habitats (HOME STRI connection)\n- Terrestrial spin-offs: surgery, manufacturing, accessibility",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "decisions",
+   "cat": "decision",
+   "title": "Open Questions & Decisions",
+   "summary": "Things still to settle. Update statuses as you decide.",
+   "notes": "",
+   "children": [
+    {
+     "id": "d-deg",
+     "title": "MS or PhD thesis?",
+     "status": "todo",
+     "body": "Changes scope: MS -> Aims 1-2 core + Aim 3 light; PhD -> all three aims in depth plus stretch aims.",
+     "notes": ""
+    },
+    {
+     "id": "d-adv",
+     "title": "Advisor confirmed as PI?",
+     "status": "todo",
+     "body": "Required for NSTGRO; the award goes to the university with the advisor as PI.",
+     "notes": ""
+    },
+    {
+     "id": "d-ros",
+     "title": "Which ROS 2 distro?",
+     "status": "todo",
+     "body": "Default: **Jazzy** (LTS) + Gazebo Harmonic. Check whether the UR driver supports the 2026 release before switching.",
+     "notes": ""
+    },
+    {
+     "id": "d-vlm",
+     "title": "Is a VLM needed at all?",
+     "status": "idea",
+     "body": "Maybe not for the core loop. A pose estimator + geometry may solve frame resolution. Treat VLM vs. baseline as an experiment, not a design decision.",
+     "notes": ""
+    },
+    {
+     "id": "d-cloud",
+     "title": "Cloud LLM allowed for prototyping?",
+     "status": "todo",
+     "body": "Recommended: yes, as the upper-bound baseline, then move onboard and measure the gap.",
+     "notes": ""
+    },
+    {
+     "id": "d-grip",
+     "title": "Gripper schedule",
+     "status": "todo",
+     "body": "Custom palm-flashlight gripper is its own mechanical project. Start with off-the-shelf gripper + separate light.",
+     "notes": ""
+    },
+    {
+     "id": "d-tbp",
+     "title": "Thesis-by-papers allowed?",
+     "status": "todo",
+     "body": "Ask the department; it saves a lot of writing at the end.",
+     "notes": ""
+    },
+    {
+     "id": "d-mem",
+     "title": "Keep this roadmap current",
+     "status": "note",
+     "body": "Claude memory is off in settings - this roadmap is the long-running memory for the project. Paste updates back into chat as needed.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "concepts",
+   "cat": "ref",
+   "title": "Concept Notes (Tutoring)",
+   "summary": "Explanations from our sessions: model types, levels of training, and how they map to this project.",
+   "notes": "",
+   "children": [
+    {
+     "id": "t-llm",
+     "title": "LLM - large language model",
+     "status": "note",
+     "body": "Text in -> text out. Hundreds of billions+ parameters; runs in data centers via cloud API. Strong reasoning and robustness to odd phrasing. For this project: the prototype / best-case comparison. Problem: needs internet - no cloud in deep space.",
+     "notes": ""
+    },
+    {
+     "id": "t-slm",
+     "title": "SLM - small language model",
+     "status": "note",
+     "body": "Same text-in/text-out, ~0.5-10B parameters (Phi, Gemma, Qwen, small Llama). Runs on a laptop or Jetson. Rule of thumb: 4-bit quantized = ~0.5 GB per billion params (8B ~ 5 GB).\n\nYour task is narrow, so a (fine-tuned) SLM may match a big LLM on it - testing that is a real research question. Likely your **core** model.",
+     "notes": ""
+    },
+    {
+     "id": "t-vlm",
+     "title": "VLM - vision-language model",
+     "status": "note",
+     "body": "Image + text in -> text out (an LLM with an image encoder). Small VLMs exist (Qwen-VL, SmolVLM). Images cost much more compute; on edge hardware ~1 s+ per frame - fine for occasional checks, too slow for every correction.\n\nNeeded when the command depends on the scene (\"shine it on the connector\"); not for \"a little left\".",
+     "notes": ""
+    },
+    {
+     "id": "t-vla",
+     "title": "VLA - vision-language-action model",
+     "status": "note",
+     "body": "Image + text in -> robot actions out (OpenVLA, pi0). Powerful but hard to check for safety and data-hungry. Not recommended here; cite in related work.",
+     "notes": ""
+    },
+    {
+     "id": "t-table",
+     "title": "Side-by-side summary",
+     "status": "note",
+     "body": "- **LLM:** text -> text; 100B+; cloud; prototype & upper bound\n- **SLM:** text -> text; 0.5-10B; Jetson/laptop; onboard interpreter\n- **VLM:** image+text -> text; 2B to huge; cloud or slow edge; scene-aware commands\n- **VLA:** image+text -> actions; 1-10B+; GPU; related work only\n\nSpeech recognition and pose tracking are separate specialized models - say \"AI pipeline\", not \"one model\".",
+     "notes": ""
+    },
+    {
+     "id": "t-train",
+     "title": "Three levels of \"training\"",
+     "status": "note",
+     "body": "1. **Pretraining from scratch** - weeks on a GPU cluster, $10k-100k+. Not realistic or expected.\n2. **Fine-tuning (LoRA / QLoRA)** - adapt an open SLM on hundreds-thousands of examples. 3B on one 12-24 GB GPU or Colab in minutes-hours. *This is \"train your own.\"*\n3. **Prompting only** - system prompt + few examples. Always try first: it's your **baseline**.\n\n**Distillation:** a big LLM generates/labels data a small model learns from.",
+     "notes": ""
+    },
+    {
+     "id": "t-vlmtrain",
+     "title": "Fine-tuning a VLM",
+     "status": "note",
+     "body": "Same LoRA process on an open small VLM, but data is image + text -> answer pairs. Harder to collect, more GPU memory. Fine-tune the text model first; VLM fine-tuning is a later aim if needed at all.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "aim1",
+   "cat": "aim",
+   "title": "Aim 1 - Conversational Positioning Loop",
+   "summary": "The core. Full speech-to-motion pipeline with the astronaut giving visual feedback through repeated spoken corrections.",
+   "notes": "Lead with this aim in the prelim. Flagship paper: P3 (HRI).",
+   "children": [
+    {
+     "id": "a1-pipe",
+     "title": "Pipeline",
+     "status": "todo",
+     "body": "1. Voice activity / wake word (Silero VAD, openWakeWord)\n2. Speech recognition (Whisper via faster-whisper / whisper.cpp)\n3. SLM -> structured motion command (JSON)\n4. Safety checker (bounds every command)\n5. MoveIt 2 on UR5e - simulation first, then real arm\n6. Text-to-speech feedback (Piper)",
+     "notes": ""
+    },
+    {
+     "id": "a1-vague",
+     "title": "Vague quantifiers",
+     "status": "todo",
+     "body": "\"A little\", \"a hair\", \"a smidge\". Keep magnitude as a **symbol** in the model output (`small`) and convert to mm in deterministic code - step behavior stays tunable and checkable.",
+     "notes": ""
+    },
+    {
+     "id": "a1-dialog",
+     "title": "Relative / dialog commands",
+     "status": "todo",
+     "body": "\"Bit more\", \"go back\", \"other way\" only make sense relative to the previous command. The system needs dialog state; include previous commands in the model input.",
+     "notes": ""
+    },
+    {
+     "id": "a1-step",
+     "title": "Adaptive step size",
+     "status": "idea",
+     "body": "Step size = loop gain. Compare fixed vs. adaptive steps (e.g., each \"bit more\" smaller than the last, like a binary search narrowing). Goal: settle fast without overshoot or oscillation.",
+     "notes": ""
+    },
+    {
+     "id": "a1-stop",
+     "title": "Hard stop path",
+     "status": "todo",
+     "body": "\"Stop\" goes to a direct keyword detector, never through the LLM. Measure stop latency separately.",
+     "notes": ""
+    },
+    {
+     "id": "a1-metrics",
+     "title": "Metrics",
+     "status": "todo",
+     "body": "- Command interpretation accuracy\n- Final positioning error (mm)\n- Corrections and time to target; overshoot count\n- End-of-speech -> motion latency\n- Stop response time",
+     "notes": ""
+    },
+    {
+     "id": "a1-contrib",
+     "title": "Contribution",
+     "status": "note",
+     "body": "First iterative, conversational fine-positioning system for crew assistance, with convergence characterized like a human-in-the-loop controller.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "aim2",
+   "cat": "aim",
+   "title": "Aim 2 - Onboard-Ready Models",
+   "summary": "How small and efficient can the model be while staying reliable without cloud access?",
+   "notes": "Papers: P2 (dataset) and P4 (model benchmark). Mostly offline benchmarks - no user study needed, so it can publish early.",
+   "children": [
+    {
+     "id": "a2-data",
+     "title": "Build the dataset",
+     "status": "todo",
+     "body": "- **Synthetic:** a big LLM generates thousands of phrasings per command (\"nudge it left\", \"your other left\", \"little more... more... stop\")\n- **Real:** record people giving commands during a task (small but essential for testing)\n- **Through ASR:** train on Whisper *outputs*, errors included (\"move a lil lef\")\n- **Multi-turn** sequences with previous commands\n- **Held-out test set:** real recordings from unseen speakers",
+     "notes": ""
+    },
+    {
+     "id": "a2-schema",
+     "title": "Output schema (design first)",
+     "status": "todo",
+     "body": "Example:\n\n`{\"action\":\"translate\",\"direction\":\"left\",\"magnitude\":\"small\",\"frame\":\"user\",\"relative_to_previous\":true}`\n\nThe schema defines what the robot can do and what you evaluate against.",
+     "notes": ""
+    },
+    {
+     "id": "a2-matrix",
+     "title": "Model comparison",
+     "status": "todo",
+     "body": "Same test set through:\n- Cloud LLM, few-shot (upper bound)\n- SLMs ~8B / ~3B / ~1B, few-shot\n- LoRA fine-tuned SLMs\n\nPlot accuracy and latency vs. size. Where accuracy drops off tells NASA how much onboard compute is needed.",
+     "notes": ""
+    },
+    {
+     "id": "a2-ft",
+     "title": "Fine-tuning process",
+     "status": "todo",
+     "body": "LoRA / QLoRA on an open SLM (Qwen, Llama, Gemma, Phi). Tools: Hugging Face **TRL + PEFT**, **Unsloth** (fast, good Colab notebooks), **Axolotl**, **LLaMA-Factory**. Write config -> point at dataset -> run -> watch loss -> repeat.",
+     "notes": ""
+    },
+    {
+     "id": "a2-deploy",
+     "title": "Compress and deploy",
+     "status": "todo",
+     "body": "- Quantize to 4-bit: GGUF for llama.cpp, or TensorRT-LLM on Jetson\n- Wrap in a ROS 2 node: subscribe to transcript, publish motion command\n- Constrained decoding (grammar / JSON schema) so output is always valid",
+     "notes": ""
+    },
+    {
+     "id": "a2-metrics",
+     "title": "Metrics",
+     "status": "todo",
+     "body": "- Per-field exact-match accuracy (direction, frame, magnitude)\n- Accuracy under noisy ASR / cabin-level noise\n- Latency and power on Jetson",
+     "notes": ""
+    },
+    {
+     "id": "a2-contrib",
+     "title": "Contribution",
+     "status": "note",
+     "body": "- The size/accuracy drop-off point for onboard command interpretation\n- A public dataset of crew-style relative positioning commands (none known to exist)",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "aim3",
+   "cat": "aim",
+   "title": "Aim 3 - Frame of Reference in Microgravity",
+   "summary": "Interpret \"my left\" / \"toward me\" correctly when the user can be in any orientation. Likely the most distinctive space contribution.",
+   "notes": "\n**Isaac Sim / Unity discussion:** Synthetic data for vision models is well established, so \"VLM trained on Isaac Sim data\" alone is not novel. Novelty is in the *application*: people in arbitrary orientations, speaker-relative spatial language without gravity, spacecraft interiors - and the fact that sim is a *necessity* (no labeled ISS imagery). Keep this as Aim 2 or 3, not the core.\n",
+   "children": [
+    {
+     "id": "a3-app",
+     "title": "Approach",
+     "status": "todo",
+     "body": "- Track the user's head/body pose with the depth camera\n- Spoken frame selection (\"in my frame\", \"camera view\") with sensible defaults\n- Compare pose estimator + geometry vs. fine-tuned small VLM",
+     "notes": ""
+    },
+    {
+     "id": "a3-sim",
+     "title": "Synthetic data: Isaac Sim + Replicator",
+     "status": "todo",
+     "body": "**Isaac Sim + Omniverse Replicator** for synthetic data (labels free and exact). Not Isaac Lab - that's for RL / policy learning. Unity works too, but check the Perception package's current status before committing.\n\nDomain randomization: lighting, camera angle, astronaut orientation, clutter.",
+     "notes": ""
+    },
+    {
+     "id": "a3-pair",
+     "title": "Example auto-labeled pair",
+     "status": "idea",
+     "body": "*Image:* ISS-like module, astronaut at 70 deg roll, light spot on a panel\n*Q:* \"From the astronaut's perspective, where is the light relative to the connector?\"\n*A:* \"About 4 cm to their left and slightly toward their feet.\"\n\nGenerate 100k overnight.",
+     "notes": ""
+    },
+    {
+     "id": "a3-pose",
+     "title": "Pose estimation of non-upright people",
+     "status": "idea",
+     "body": "Most pose estimators assume upright people. A floating astronaut upside-down likely breaks them - and \"my left\" depends on getting orientation right. Sim is the only practical way to get large labeled data. **Strongest novel angle.**",
+     "notes": ""
+    },
+    {
+     "id": "a3-novel",
+     "title": "Novelty angles",
+     "status": "note",
+     "body": "1. People in arbitrary orientations\n2. Speaker-relative spatial language without gravity (existing datasets use the camera viewpoint)\n3. Sim as necessity - no labeled ISS imagery\n4. Spacecraft-interior conditions: harsh lighting, moving flashlight spot, reflections, racks/cables\n5. Public synthetic dataset contribution",
+     "notes": ""
+    },
+    {
+     "id": "a3-s2r",
+     "title": "Sim-to-real evaluation",
+     "status": "todo",
+     "body": "Real lab tests: mock module wall, people lying down / tilted to imitate floating, real flashlight. Report sim-only vs. sim + a little real vs. real-only.",
+     "notes": ""
+    },
+    {
+     "id": "a3-assets",
+     "title": "Free assets",
+     "status": "todo",
+     "body": "NASA's Astrobee simulator includes an ISS interior model; NASA publishes 3D models. Check licenses.",
+     "notes": ""
+    },
+    {
+     "id": "a3-search",
+     "title": "Lit search before claiming novelty",
+     "status": "todo",
+     "body": "Search: \"synthetic data vision language model spatial reasoning\", \"egocentric spatial reference VLM\", \"human pose estimation inverted orientation\", \"microgravity human pose estimation\", \"astronaut pose estimation dataset\".",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "stretch",
+   "cat": "stretch",
+   "title": "Stretch Aims & Future Work",
+   "summary": "Extensions for later, or for future-work sections.",
+   "notes": "",
+   "children": [
+    {
+     "id": "s-point",
+     "title": "Pointing",
+     "status": "idea",
+     "body": "\"Shine it there\" + gesture. MediaPipe hand/body keypoints -> ray from eye/shoulder through fingertip -> intersect depth point cloud. See Nickel & Stiefelhagen (2007).",
+     "notes": ""
+    },
+    {
+     "id": "s-gaze",
+     "title": "Gaze-directed lighting",
+     "status": "idea",
+     "body": "Eye-tracking glasses: light where the astronaut is looking (from the original proposal).",
+     "notes": ""
+    },
+    {
+     "id": "s-robotloop",
+     "title": "Robot-side tracking loop",
+     "status": "idea",
+     "body": "Camera-in-palm detects the light spot and keeps it on a moving target - robot closes its own loop.",
+     "notes": ""
+    },
+    {
+     "id": "s-ask",
+     "title": "Asking for clarification",
+     "status": "idea",
+     "body": "Robot asks when unsure (\"my left or yours?\"). Build on KnowNo (Ren et al. 2023, conformal prediction).",
+     "notes": ""
+    },
+    {
+     "id": "s-vlm",
+     "title": "Scene-referenced commands",
+     "status": "idea",
+     "body": "\"Light the blue connector\" - needs a VLM or open-vocabulary detector (Grounding DINO, OWLv2, YOLO-World, SAM 2).",
+     "notes": ""
+    },
+    {
+     "id": "s-grip",
+     "title": "Custom palm-flashlight gripper",
+     "status": "idea",
+     "body": "Palm flashlight + camera so the robot sees what it lights. LED control through micro-ROS on a microcontroller.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "arch",
+   "cat": "build",
+   "title": "System Architecture & Software",
+   "summary": "Modular pipeline (recommended) over end-to-end VLA: interpretable, testable, checkable for safety.",
+   "notes": "The LLM never controls motors directly - it emits structured calls that a safety layer checks before anything moves.",
+   "children": [
+    {
+     "id": "x-modvla",
+     "title": "Modular vs. end-to-end",
+     "status": "note",
+     "body": "- **Modular:** ASR -> LLM picks from a fixed set of skills -> perception -> MoveIt. Interpretable, testable, no training data required. Limited to programmed skills.\n- **End-to-end VLA:** images + text -> motions. Handles hard-to-program skills; needs demos, hard to verify, heavy compute.\n\nChosen: **modular**.",
+     "notes": ""
+    },
+    {
+     "id": "x-ros",
+     "title": "ROS 2 + simulation",
+     "status": "todo",
+     "body": "ROS 2 **Jazzy** (LTS) + **Gazebo Harmonic**. Check UR driver support for the 2026 release before switching.",
+     "notes": ""
+    },
+    {
+     "id": "x-ur",
+     "title": "Universal Robots packages",
+     "status": "todo",
+     "body": "Don't build the sim from scratch: `Universal_Robots_ROS2_Driver`, `ur_description`, `ur_moveit_config`, `ur_simulation_gz`. **URSim** tests the real driver without the arm.",
+     "notes": ""
+    },
+    {
+     "id": "x-moveit",
+     "title": "Motion: MoveIt 2 + ros2_control",
+     "status": "todo",
+     "body": "Learn MoveIt 2 early - that's where the arm work happens.",
+     "notes": ""
+    },
+    {
+     "id": "x-speech",
+     "title": "Speech stack",
+     "status": "todo",
+     "body": "Silero VAD / openWakeWord -> faster-whisper or whisper.cpp -> Piper TTS.",
+     "notes": ""
+    },
+    {
+     "id": "x-llmrt",
+     "title": "Model runtimes",
+     "status": "todo",
+     "body": "Prototyping: llama.cpp / Ollama. Deployment: TensorRT-LLM on Jetson. Cloud API (Claude / GPT) as upper bound.",
+     "notes": ""
+    },
+    {
+     "id": "x-perc",
+     "title": "Perception",
+     "status": "todo",
+     "body": "MediaPipe (pose/hands), `realsense-ros` or Orbbec SDK, `tf2`, `vision_msgs`, `easy_handeye2` for calibration.",
+     "notes": ""
+    },
+    {
+     "id": "x-tools",
+     "title": "Tooling",
+     "status": "todo",
+     "body": "`rosbag2` for data recording, Docker for reproducibility, Git, Zotero for papers. Isaac Sim (ROS 2 bridge) for synthetic data.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "hw",
+   "cat": "build",
+   "title": "Hardware",
+   "summary": "UR5e testbed, depth camera, mic array, onboard computer, custom gripper.",
+   "notes": "",
+   "children": [
+    {
+     "id": "h-ur",
+     "title": "UR5e 6-DOF arm",
+     "status": "todo",
+     "body": "Commit to the UR5e (not Trossen). Configure its safety limits.",
+     "notes": ""
+    },
+    {
+     "id": "h-cam",
+     "title": "Depth camera",
+     "status": "todo",
+     "body": "Options: Intel RealSense D435 / D405, Orbbec, ZED. Main job: track user head/body pose for frame resolution.",
+     "notes": ""
+    },
+    {
+     "id": "h-mic",
+     "title": "Microphone array",
+     "status": "todo",
+     "body": "Get a beamforming array (e.g., ReSpeaker), not a single mic. Test under cabin-like noise.",
+     "notes": ""
+    },
+    {
+     "id": "h-compute",
+     "title": "Onboard computer",
+     "status": "todo",
+     "body": "NVIDIA Jetson AGX Orin or Jetson Thor. 4-bit SLM memory ~0.5 GB per billion params.",
+     "notes": ""
+    },
+    {
+     "id": "h-grip",
+     "title": "Gripper",
+     "status": "todo",
+     "body": "Custom palm flashlight (+ camera) is its own design project. Start with off-the-shelf (e.g., Robotiq) + separate light. micro-ROS for LED control.",
+     "notes": ""
+    },
+    {
+     "id": "h-calib",
+     "title": "Hand-eye calibration",
+     "status": "todo",
+     "body": "Camera-to-arm calibration often costs students weeks. Plan for it (`easy_handeye2`).",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "cross",
+   "cat": "core",
+   "title": "Applies to Every Aim",
+   "summary": "Safety, user study, noise testing, NASA alignment.",
+   "notes": "",
+   "children": [
+    {
+     "id": "cc-safety",
+     "title": "Safety",
+     "status": "todo",
+     "body": "- Workspace and speed limits; max step size; hard stop bypassing the LLM\n- UR5e safety configuration; **ISO/TS 15066** as reference\n- Constrained, checked LLM outputs - see RoboPAIR (jailbreaking LLM-controlled robots)",
+     "notes": ""
+    },
+    {
+     "id": "cc-study",
+     "title": "User study",
+     "status": "todo",
+     "body": "Compare voice vs. teach pendant / joystick vs. human helper. Measure task time, **NASA-TLX** workload, **SUS** usability. **Start IRB early** - it takes months.",
+     "notes": ""
+    },
+    {
+     "id": "cc-noise",
+     "title": "Noise testing",
+     "status": "todo",
+     "body": "Test with recorded cabin-like noise from day one. Word error rate vs. noise level is an early result.",
+     "notes": ""
+    },
+    {
+     "id": "cc-nasa",
+     "title": "NASA alignment",
+     "status": "todo",
+     "body": "STMD taxonomy **TX04 / TX10**; Civil Space Shortfalls; use cases: ISS maintenance, Gateway, lunar habitats (HOME).",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "learn",
+   "cat": "plan",
+   "title": "Learning Plan",
+   "summary": "The original game plan, revised: learn by building the actual pipeline.",
+   "notes": "\n**Original game plan:** (1) learn ROS 2 via UC Berkeley open-source classes and simulate the arm; (2) add camera, pointing and object detection; (3) test voice detection; (4) LLM - needs scoping.\n\n**Revisions:** steps 1 and 3 become the core; step 2 shrinks to user-pose tracking; step 4 is scoped in Aim 2.\n",
+   "children": [
+    {
+     "id": "l-berk",
+     "title": "UC Berkeley EECS 106A/B",
+     "status": "todo",
+     "body": "Uses ROS 2. Resources page: ROS 2 Explained, Linux intro, Murray/Li/Sastry textbook, Modern Robotics. https://pages.github.berkeley.edu/EECS-106/fa25-site/resources",
+     "notes": ""
+    },
+    {
+     "id": "l-mr",
+     "title": "Modern Robotics (Lynch & Park)",
+     "status": "todo",
+     "body": "Free PDF + Coursera course. Kinematics and frames - directly relevant to frame resolution.",
+     "notes": ""
+    },
+    {
+     "id": "l-ros",
+     "title": "ROS 2 basics",
+     "status": "todo",
+     "body": "Official ROS 2 tutorials: nodes, topics, services, actions, launch files, tf2.",
+     "notes": ""
+    },
+    {
+     "id": "l-ursim",
+     "title": "UR5e in Gazebo + MoveIt",
+     "status": "todo",
+     "body": "Install the official UR packages and get MoveIt planning in sim. Then drive it with hard-coded voice commands.",
+     "notes": ""
+    },
+    {
+     "id": "l-unsloth",
+     "title": "First hands-on: fine-tune a 1B model",
+     "status": "todo",
+     "body": "Run an Unsloth Colab notebook fine-tuning a ~1B model on ~200 made-up command examples. One afternoon; makes Aim 2 concrete.",
+     "notes": ""
+    },
+    {
+     "id": "l-whisper",
+     "title": "Whisper under noise",
+     "status": "todo",
+     "body": "Run faster-whisper on your own recordings with added noise; measure word error rate.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "timeline",
+   "cat": "plan",
+   "title": "Timeline (2 Years)",
+   "summary": "Prelim first, then build the loop, then models, then frame resolution, then the study.",
+   "notes": "",
+   "children": [
+    {
+     "id": "tl-0",
+     "title": "Now -> Dec 9, 2026",
+     "status": "doing",
+     "body": "Research question, advisor sign-off, preliminary proposal built around Aims 1-3.",
+     "notes": ""
+    },
+    {
+     "id": "tl-1",
+     "title": "Months 1-6",
+     "status": "todo",
+     "body": "ROS 2 basics; UR5e in Gazebo + MoveIt; Aim 1 pipeline with a cloud LLM; start dataset. Full proposal by Mar 18 if invited.",
+     "notes": ""
+    },
+    {
+     "id": "tl-2",
+     "title": "Months 6-12",
+     "status": "todo",
+     "body": "Aim 2 model comparisons; move to the real arm; submit IRB; gripper prototype.",
+     "notes": ""
+    },
+    {
+     "id": "tl-3",
+     "title": "Months 12-18",
+     "status": "todo",
+     "body": "Aim 3: synthetic data generation and frame resolution.",
+     "notes": ""
+    },
+    {
+     "id": "tl-4",
+     "title": "Months 18-24",
+     "status": "todo",
+     "body": "User study, combined evaluation, journal paper, thesis writing.",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "papers",
+   "cat": "output",
+   "title": "Papers",
+   "summary": "Plan for 4-6 publications: early workshop papers, 2-3 conference papers, one journal article.",
+   "notes": "\n**Tips:** structure the thesis by papers (one per chapter) if allowed. Venue deadlines move every year - HRI/ICRA usually early fall, IROS early spring, IEEE Aerospace abstracts around summer. Work backward from them. List 2-3 planned papers in NSTGRO.\n",
+   "children": [
+    {
+     "id": "pp1",
+     "title": "P1 - Concept & system (months 6-9)",
+     "status": "todo",
+     "body": "*Toward conversational voice-commanded robotic assistance for crew operations.* Problem, architecture, first demo. Venues: IEEE Aerospace, AIAA SciTech/ASCEND, ICES, HRI/ICRA workshops.",
+     "notes": ""
+    },
+    {
+     "id": "pp2",
+     "title": "P2 - Dataset (months 9-12)",
+     "status": "todo",
+     "body": "*A spoken spatial-command dataset for iterative robot positioning.* Synthetic + recorded + ASR-error transcripts, multi-turn. Workshop first; later NeurIPS Datasets & Benchmarks or LREC.",
+     "notes": ""
+    },
+    {
+     "id": "pp3",
+     "title": "P3 - Correction loop (months 15-18)",
+     "status": "todo",
+     "body": "*Closing the loop with words: adaptive step-size interpretation of vague spatial corrections.* Flagship HRI paper with user study. Venues: ACM/IEEE HRI, RO-MAN, IROS.",
+     "notes": ""
+    },
+    {
+     "id": "pp4",
+     "title": "P4 - Onboard models (months 12-15)",
+     "status": "todo",
+     "body": "*How small can it be? Benchmarking edge language models for spoken robot command interpretation.* Venues: ICRA/IROS, RA-L, IEEE Aerospace; speech version: Interspeech/ICASSP.",
+     "notes": ""
+    },
+    {
+     "id": "pp5",
+     "title": "P5 - Frame of reference (months 18-22)",
+     "status": "todo",
+     "body": "*Whose left? Speaker-relative spatial grounding for users in arbitrary orientations.* Likely most cited. Venues: IROS, ICRA, CoRL, CVPR/ICCV workshops. Spin-off: pose-estimator failure on non-upright people.",
+     "notes": ""
+    },
+    {
+     "id": "pp6",
+     "title": "P6 - Journal (months 22-24)",
+     "status": "todo",
+     "body": "*A voice-commanded robotic task assistant for crew operations: design, onboard implementation, and human evaluation.* Venues: Acta Astronautica, JAIS, Frontiers in Space Technologies, IEEE THMS, ACM THRI.",
+     "notes": ""
+    },
+    {
+     "id": "pp-side",
+     "title": "Side papers",
+     "status": "idea",
+     "body": "- Gripper hardware design (IEEE Aerospace, ICES)\n- Safety verification of LLM motion commands (workshop)\n- Clarification via uncertainty (HRI late-breaking report)",
+     "notes": ""
+    }
+   ]
+  },
+  {
+   "id": "lit",
+   "cat": "ref",
+   "title": "Literature",
+   "summary": "Reading list by theme. Cited from memory in chat - verify each in Google Scholar before it goes in a bibliography.",
+   "notes": "",
+   "children": [
+    {
+     "id": "r-space",
+     "title": "Space robot assistants (prior art)",
+     "status": "todo",
+     "body": "- **CIMON** (Airbus/DLR/IBM) - ISS, 2018\n- **Callisto** (Lockheed/Amazon/Cisco) - Artemis I\n- **Astrobee**, **Robonaut 2**\n- Royce et al. 2024, **ROSA** - [arXiv:2410.06472](https://arxiv.org/abs/2410.06472), [GitHub](https://github.com/nasa-jpl/rosa)",
+     "notes": ""
+    },
+    {
+     "id": "r-llm",
+     "title": "LLMs for robot planning",
+     "status": "todo",
+     "body": "- Ahn et al. 2022, *SayCan*\n- Liang et al. 2022, *Code as Policies* (closest to function-calling design)\n- Huang et al. 2022, *Inner Monologue*\n- Singh et al. 2022, *ProgPrompt*\n- Huang et al. 2023, *VoxPoser*\n- Mower et al. 2024, *ROS-LLM*",
+     "notes": ""
+    },
+    {
+     "id": "r-vla",
+     "title": "Vision-language-action models",
+     "status": "todo",
+     "body": "- Brohan et al. 2023, *RT-2*\n- Kim et al. 2024, *OpenVLA*\n- Black et al. 2024, *pi0*",
+     "notes": ""
+    },
+    {
+     "id": "r-safe",
+     "title": "Uncertainty & safety",
+     "status": "todo",
+     "body": "- Ren et al. 2023, *Robots That Ask For Help* (KnowNo) - read first\n- Robey et al. 2024, *Jailbreaking LLM-Controlled Robots* (RoboPAIR)\n- ISO/TS 15066",
+     "notes": ""
+    },
+    {
+     "id": "r-synth",
+     "title": "Synthetic data & spatial reasoning",
+     "status": "todo",
+     "body": "- Tobin et al. 2017, *Domain Randomization*\n- Johnson et al. 2017, *CLEVR*\n- Chen et al. 2024, *SpatialVLM*\n- Yuan et al. 2024, *RoboPoint*",
+     "notes": ""
+    },
+    {
+     "id": "r-point",
+     "title": "Pointing gestures",
+     "status": "todo",
+     "body": "Nickel & Stiefelhagen 2007, *Visual recognition of pointing gestures for human-robot interaction*.",
+     "notes": ""
+    },
+    {
+     "id": "r-surv",
+     "title": "Surveys & textbooks",
+     "status": "todo",
+     "body": "- Firoozi et al., *Foundation Models in Robotics*\n- Zeng et al. 2023, *Large Language Models for Robotics: A Survey*\n- Lynch & Park, *Modern Robotics*\n- Murray, Li & Sastry, *A Mathematical Introduction to Robotic Manipulation*",
+     "notes": ""
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "proposal",
+   "to": "core",
+   "label": "frames"
+  },
+  {
+   "from": "core",
+   "to": "aim1",
+   "label": ""
+  },
+  {
+   "from": "core",
+   "to": "aim2",
+   "label": ""
+  },
+  {
+   "from": "core",
+   "to": "aim3",
+   "label": ""
+  },
+  {
+   "from": "aim1",
+   "to": "papers",
+   "label": "P1, P3"
+  },
+  {
+   "from": "aim2",
+   "to": "papers",
+   "label": "P2, P4"
+  },
+  {
+   "from": "aim3",
+   "to": "papers",
+   "label": "P5"
+  },
+  {
+   "from": "aim3",
+   "to": "stretch",
+   "label": "extends"
+  },
+  {
+   "from": "arch",
+   "to": "aim1",
+   "label": "implements"
+  },
+  {
+   "from": "hw",
+   "to": "arch",
+   "label": ""
+  },
+  {
+   "from": "learn",
+   "to": "arch",
+   "label": "builds skills"
+  },
+  {
+   "from": "cross",
+   "to": "aim1",
+   "label": ""
+  },
+  {
+   "from": "concepts",
+   "to": "aim2",
+   "label": "background"
+  },
+  {
+   "from": "decisions",
+   "to": "proposal",
+   "label": "blocks"
+  },
+  {
+   "from": "timeline",
+   "to": "papers",
+   "label": ""
+  },
+  {
+   "from": "lit",
+   "to": "core",
+   "label": "related work"
+  }
+ ]
+}/*DATA_END*/;</script>
+<script>
+(function(){
+"use strict";
+const SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+const KEY = 'roadmap:' + location.pathname;
+const W = 640, GAPX = 170, GAPY = 150, COLS = 4;
+const CATS = {
+  core:{label:'Research core',v:'--c-core'}, proposal:{label:'Proposal',v:'--c-proposal'},
+  aim:{label:'Aim',v:'--c-aim'}, stretch:{label:'Stretch',v:'--c-stretch'},
+  build:{label:'System & hardware',v:'--c-build'}, plan:{label:'Plan & learning',v:'--c-plan'},
+  output:{label:'Papers',v:'--c-output'}, ref:{label:'Reference & notes',v:'--c-ref'},
+  decision:{label:'Decisions',v:'--c-decision'}
+};
+const STATUSES = ['note','idea','todo','doing','done'];
+const $ = s => document.querySelector(s);
+const vp = $('#vp'), world = $('#world'), svg = $('#edges'), svgL = $('#elabels'), panel = $('#panel'), pb = $('#pb');
+const clone = o => JSON.parse(JSON.stringify(o));
+const uid = p => p + '-' + Math.random().toString(36).slice(2, 8);
+
+// ---------- data ----------
+const BAKED = window.ROADMAP;
+let data = clone(BAKED);
+try {
+  const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (s && s.nodes && (s.meta.updated || 0) >= (BAKED.meta.updated || 0)) data = s;
+} catch (e) {}
+let dirtyLocal = false;
+let saveT;
+function changed(rerender = true){
+  data.meta.updated = Date.now();
+  dirtyLocal = true;
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { toast('Could not save locally: ' + e.message); } }, 250);
+  if (rerender) renderWorld();
+}
+const nodeById = id => data.nodes.find(n => n.id === id);
+
+// ---------- layout ----------
+function nodeH(n){ const rows = Math.ceil((n.children.length + (state.edit ? 1 : 0)) / 2); return Math.max(260, 178 + rows * 94 + 16); }
+function autoLayout(){
+  const need = data.nodes.some(n => typeof n.x !== 'number');
+  if (!need) return;
+  const colY = []; let row = 0, rowMax = 0, y = 0;
+  data.nodes.forEach((n, i) => {
+    const c = i % COLS;
+    if (c === 0 && i > 0) { y += rowMax + GAPY; rowMax = 0; }
+    if (typeof n.x !== 'number') { n.x = c * (W + GAPX); n.y = y; }
+    rowMax = Math.max(rowMax, nodeH(n));
+  });
+}
+
+// ---------- view ----------
+const state = { edit:false, sel:null, q:'' };
+const view = { x:0, y:0, s:0.3 };
+function applyView(){
+  world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`;
+  world.style.setProperty('--inv', (1 / view.s).toFixed(4));
+  world.classList.toggle('far', view.s < 0.5);
+  const g = 26 * view.s;
+  vp.style.backgroundSize = `${g}px ${g}px`;
+  vp.style.backgroundPosition = `${view.x}px ${view.y}px`;
+  const zl = document.getElementById('zl');
+  if (zl) zl.textContent = Math.round(view.s * 100) + '%';
+}
+function vpSize(){ const r = vp.getBoundingClientRect(); return { w:r.width - (panel.classList.contains('open') && innerWidth > 760 ? 460 : 0), h:r.height, r }; }
+function bounds(list){
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  list.forEach(n => { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + W); y1 = Math.max(y1, n.y + nodeH(n)); });
+  return { x0, y0, x1, y1 };
+}
+function targetFor(b, maxS){
+  const { w, h } = vpSize(), pad = 50, pt = 30, pbm = innerWidth > 760 ? 110 : 40;
+  const s = Math.min((w - pad * 2) / (b.x1 - b.x0), (h - pt - pbm) / (b.y1 - b.y0), maxS);
+  return { s, x: (w - (b.x1 - b.x0) * s) / 2 - b.x0 * s, y: pt + (h - pt - pbm - (b.y1 - b.y0) * s) / 2 - b.y0 * s };
+}
+let anim;
+function animateTo(t, ms = 520){
+  cancelAnimationFrame(anim);
+  const f = { ...view }, t0 = performance.now();
+  const ease = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / ms), e = ease(p);
+    // interpolate in log-scale for smoother zoom
+    view.s = Math.exp(Math.log(f.s) + (Math.log(t.s) - Math.log(f.s)) * e);
+    view.x = f.x + (t.x - f.x) * e; view.y = f.y + (t.y - f.y) * e;
+    applyView();
+    if (p < 1) anim = requestAnimationFrame(step);
+  };
+  anim = requestAnimationFrame(step);
+}
+const fitAll = () => data.nodes.length && animateTo(targetFor(bounds(data.nodes), 1));
+const focusNode = n => animateTo(targetFor(bounds([n]), 1.5));
+function zoomAt(cx, cy, f){
+  cancelAnimationFrame(anim);
+  const ns = Math.min(3, Math.max(0.08, view.s * f)), k = ns / view.s;
+  view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.s = ns; applyView();
+}
+
+// ---------- markdown ----------
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function inline(s){
+  const codes = [];
+  s = s.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+  s = esc(s)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => '<code>' + esc(codes[i]) + '</code>');
+}
+function md(src){
+  const lines = String(src || '').split('\n'); let out = '', list = null, para = [];
+  const flushP = () => { if (para.length) { out += '<p>' + inline(para.join(' ')) + '</p>'; para = []; } };
+  const flushL = () => { if (list) { out += `<${list.t}>` + list.items.map(i => '<li>' + inline(i) + '</li>').join('') + `</${list.t}>`; list = null; } };
+  for (const raw of lines) {
+    const l = raw.trim(); let m;
+    if (!l) { flushP(); flushL(); continue; }
+    if ((m = l.match(/^#{1,6}\s+(.*)/))) { flushP(); flushL(); out += '<h4>' + inline(m[1]) + '</h4>'; continue; }
+    if ((m = l.match(/^[-*]\s+(.*)/))) { flushP(); if (!list || list.t !== 'ul') { flushL(); list = { t:'ul', items:[] }; } list.items.push(m[1]); continue; }
+    if ((m = l.match(/^\d+[.)]\s+(.*)/))) { flushP(); if (!list || list.t !== 'ol') { flushL(); list = { t:'ol', items:[] }; } list.items.push(m[1]); continue; }
+    if (list) { list.items[list.items.length - 1] += ' ' + l; continue; }
+    para.push(l);
+  }
+  flushP(); flushL(); return out;
+}
+const plain = s => String(s || '').replace(/`([^`]*)`/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*#>]/g, '').replace(/^\s*[-\d.)]+\s+/gm, '').replace(/\s+/g, ' ').trim();
+
+// ---------- render world ----------
+const catColor = c => `var(${(CATS[c] || CATS.core).v})`;
+function progress(n){
+  const tracked = n.children.filter(k => ['todo','doing','done'].includes(k.status));
+  const done = tracked.filter(k => k.status === 'done').length;
+  return { tracked: tracked.length, done, pct: tracked.length ? Math.round(done / tracked.length * 100) : 0 };
+}
+const noteIcon = '<svg class="ni" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+function matches(text){ return state.q && String(text || '').toLowerCase().includes(state.q); }
+function renderWorld(){
+  document.body.classList.toggle('edit', state.edit);
+  world.classList.toggle('edit', state.edit);
+  [...world.querySelectorAll('.node')].forEach(e => e.remove());
+  const frag = document.createDocumentFragment();
+  for (const n of data.nodes) {
+    const p = progress(n);
+    const nodeHit = matches(n.title) || matches(n.summary) || matches(n.notes);
+    const kidHits = n.children.map(k => matches(k.title) || matches(k.body) || matches(k.notes));
+    const anyHit = nodeHit || kidHits.some(Boolean);
+    const el = document.createElement('div');
+    el.className = 'node' + (state.sel && state.sel.node === n.id ? ' sel' : '') + (state.q && !anyHit ? ' dim' : '');
+    el.dataset.id = n.id;
+    el.style.cssText = `left:${n.x}px;top:${n.y}px;height:${nodeH(n)}px;--c:${catColor(n.cat)}`;
+    const progHtml = p.tracked ? `<div class="prog"><div class="track"><div class="fill" style="width:${p.pct}%"></div></div><span>${p.done}/${p.tracked} done</span></div>` : `<div class="prog"><span>${n.children.length} cards</span></div>`;
+    el.innerHTML = `
+      <div class="node-head" data-act="head">
+        <div class="cat">${esc((CATS[n.cat] || CATS.core).label)}</div>
+        <div class="node-title" title="${esc(n.title)}">${esc(n.title)}</div>
+        ${progHtml}
+      </div>
+      <div class="summary">${inline(n.summary || '')}</div>
+      <div class="kids">
+        ${n.children.map((k, i) => `
+          <div class="kid${state.sel && state.sel.kid === k.id ? ' sel' : ''}${kidHits[i] ? ' hit' : ''}" data-act="kid" data-kid="${esc(k.id)}">
+            <span class="dot" style="background:var(--s-${esc(k.status || 'note')})"></span>
+            ${k.notes ? noteIcon : ''}
+            <div class="kid-title">${esc(k.title)}</div>
+            <div class="kid-teaser">${esc(plain(k.body).slice(0, 180))}</div>
+          </div>`).join('')}
+        <button class="addkid" data-act="addkid">＋ Add card</button>
+      </div>
+      <div class="far-title" data-act="head">
+        <div class="cat">${esc((CATS[n.cat] || CATS.core).label)}</div>
+        <div class="ft">${esc(n.title)}</div>
+        <div class="fm">${n.children.length} cards${p.tracked ? ' · ' + p.pct + '% done' : ''}${n.notes ? ' · has notes' : ''}</div>
+      </div>`;
+    frag.appendChild(el);
+  }
+  world.appendChild(frag);
+  drawEdges();
+}
+function anchor(n, toward){
+  const h = nodeH(n), cx = n.x + W / 2, cy = n.y + h / 2;
+  const dx = toward.x - cx, dy = toward.y - cy;
+  if (Math.abs(dx) / W > Math.abs(dy) / h) return { x: dx > 0 ? n.x + W : n.x, y: cy, dir:'h' };
+  return { x: cx, y: dy > 0 ? n.y + h : n.y, dir:'v' };
+}
+function drawEdges(){
+  let s = '', L = '';
+  const selNode = state.sel && state.sel.node;
+  for (const e of data.edges) {
+    const a = nodeById(e.from), b = nodeById(e.to); if (!a || !b) continue;
+    const ca = { x:a.x + W / 2, y:a.y + nodeH(a) / 2 }, cb = { x:b.x + W / 2, y:b.y + nodeH(b) / 2 };
+    const p = anchor(a, cb), q = anchor(b, ca);
+    const k = Math.max(60, Math.hypot(q.x - p.x, q.y - p.y) * 0.35);
+    const c1 = p.dir === 'h' ? { x:p.x + Math.sign(q.x - p.x) * k, y:p.y } : { x:p.x, y:p.y + Math.sign(q.y - p.y) * k };
+    const c2 = q.dir === 'h' ? { x:q.x + Math.sign(p.x - q.x) * k, y:q.y } : { x:q.x, y:q.y + Math.sign(p.y - q.y) * k };
+    const hot = selNode && (e.from === selNode || e.to === selNode);
+    s += `<path class="${hot ? 'hot' : ''}" d="M${p.x},${p.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${q.x},${q.y}"/>`;
+    if (e.label) {
+      const mx = .125 * p.x + .375 * c1.x + .375 * c2.x + .125 * q.x, my = .125 * p.y + .375 * c1.y + .375 * c2.y + .125 * q.y;
+      L += `<text x="${mx}" y="${my}" dy="4">${esc(e.label)}</text>`;
+    }
+  }
+  svg.innerHTML = s; svgL.innerHTML = L; world.appendChild(svgL);
+}
+
+// ---------- legend ----------
+function renderLegend(){
+  const used = [...new Set(data.nodes.map(n => n.cat))];
+  $('#legend').innerHTML = used.map(c => `<span class="lg" data-cat="${c}"><i style="background:${catColor(c)}"></i>${esc((CATS[c] || CATS.core).label)}</span>`).join('') +
+    `<span class="lg"><i style="background:var(--s-todo);border-radius:50%"></i>to do</span><span class="lg"><i style="background:var(--s-doing);border-radius:50%"></i>doing</span><span class="lg"><i style="background:var(--s-done);border-radius:50%"></i>done</span><span class="lg"><i style="background:var(--s-idea);border-radius:50%"></i>idea</span>` +
+    `<div class="zl"><span>Scroll to zoom · drag to pan · click a section · <b>?</b> help</span><span id="zl"></span></div>`;
+  applyView();
+}
+
+// ---------- panel ----------
+function select(nodeId, kidId = null, opts = {}){
+  state.sel = { node:nodeId, kid:kidId };
+  openPanel();
+  renderWorld();
+  if (opts.focus) { const n = nodeById(nodeId); setTimeout(() => focusNode(n), 30); }
+}
+function openPanel(){ panel.classList.add('open'); document.body.classList.add('panel-open'); renderPanel(); }
+function closePanel(){ panel.classList.remove('open'); document.body.classList.remove('panel-open'); state.sel = null; renderWorld(); }
+const statusChip = s => `<span class="chip"><i style="background:var(--s-${s})"></i>${s}</span>`;
+function renderPanel(){
+  if (!state.sel) return;
+  const n = nodeById(state.sel.node); if (!n) return closePanel();
+  const k = state.sel.kid ? n.children.find(c => c.id === state.sel.kid) : null;
+  panel.style.setProperty('--c', catColor(n.cat));
+  $('#crumb').innerHTML = k ? `<a data-p="node">${esc(n.title)}</a> &nbsp;›&nbsp; ${esc(k.title)}` : esc((CATS[n.cat] || CATS.core).label);
+  pb.innerHTML = k ? (state.edit ? editKid(n, k) : viewKid(n, k)) : (state.edit ? editNode(n) : viewNode(n));
+  pb.scrollTop = 0;
+}
+function viewNode(n){
+  const links = data.edges.filter(e => e.from === n.id || e.to === n.id);
+  return `<div class="cat" style="color:var(--c)">${esc((CATS[n.cat] || CATS.core).label)}</div>
+    <h2>${esc(n.title)}</h2>
+    <div class="md">${md(n.summary)}</div>
+    ${n.notes ? `<h3>Discussion notes</h3><div class="notes md">${md(n.notes)}</div>` : ''}
+    <h3>Cards (${n.children.length})</h3>
+    <div class="list">${n.children.map(c => `<div class="li" data-p="kid" data-kid="${esc(c.id)}"><i style="background:var(--s-${c.status || 'note'})"></i><span>${esc(c.title)}</span>${c.notes ? '<small>notes</small>' : ''}</div>`).join('') || '<div class="empty">No cards yet.</div>'}</div>
+    ${links.length ? `<h3>Connections</h3><div class="list">${links.map(e => { const o = nodeById(e.from === n.id ? e.to : e.from); return o ? `<div class="li" data-p="goto" data-node="${esc(o.id)}"><i style="background:${catColor(o.cat)}"></i><span>${e.from === n.id ? '→' : '←'} ${esc(o.title)}</span><small>${esc(e.label || '')}</small></div>` : ''; }).join('')}</div>` : ''}`;
+}
+function viewKid(n, k){
+  const i = n.children.indexOf(k);
+  return `<div class="row">${statusChip(k.status || 'note')}</div>
+    <h2>${esc(k.title)}</h2>
+    <div class="md">${md(k.body) || '<p class="empty">No details yet.</p>'}</div>
+    ${k.notes ? `<h3>Discussion notes</h3><div class="notes md">${md(k.notes)}</div>` : ''}
+    <div class="pnav">
+      <button class="btn" data-p="prev" ${i <= 0 ? 'disabled style="opacity:.4"' : ''}>← Previous</button>
+      <button class="btn" data-p="next" ${i >= n.children.length - 1 ? 'disabled style="opacity:.4"' : ''}>Next →</button>
+    </div>`;
+}
+function editNode(n){
+  const others = data.nodes.filter(o => o.id !== n.id);
+  const links = data.edges.map((e, i) => ({ e, i })).filter(({ e }) => e.from === n.id || e.to === n.id);
+  return `<h2 style="margin-top:0">Edit section</h2>
+    <label class="f">Title</label><input class="inp" data-f="n.title" value="${esc(n.title)}">
+    <label class="f">Category</label><select class="inp" data-f="n.cat">${Object.entries(CATS).map(([c, v]) => `<option value="${c}" ${c === n.cat ? 'selected' : ''}>${v.label}</option>`).join('')}</select>
+    <label class="f">Summary</label><textarea class="inp" data-f="n.summary">${esc(n.summary)}</textarea>
+    <label class="f">Discussion notes</label><textarea class="inp tall" data-f="n.notes" placeholder="Conversation notes, decisions, open threads…">${esc(n.notes)}</textarea>
+    <div class="hint">Supports **bold**, *italic*, \`code\`, - lists, 1. lists, [links](https://…)</div>
+    <h3>Cards</h3>
+    <div class="list">${n.children.map(c => `<div class="li" data-p="kid" data-kid="${esc(c.id)}"><i style="background:var(--s-${c.status || 'note'})"></i><span>${esc(c.title)}</span><small>edit</small></div>`).join('')}</div>
+    <div class="row" style="margin-top:8px"><button class="btn" data-p="addkid">＋ Add card</button></div>
+    <h3>Connections</h3>
+    <div class="list">${links.map(({ e, i }) => { const o = nodeById(e.from === n.id ? e.to : e.from); return `<div class="li"><span>${e.from === n.id ? '→' : '←'} ${esc(o ? o.title : '?')}</span><input class="inp" style="width:120px;padding:5px 8px;font-size:12px" data-edge="${i}" value="${esc(e.label || '')}" placeholder="label"><button class="btn icon danger" data-p="deledge" data-i="${i}" title="Remove link">✕</button></div>`; }).join('') || '<div class="empty">No connections.</div>'}</div>
+    <div class="row" style="margin-top:8px">
+      <select class="inp" id="newedge" style="flex:1">${others.map(o => `<option value="${esc(o.id)}">${esc(o.title)}</option>`).join('')}</select>
+      <button class="btn" data-p="addedge">＋ Link</button>
+    </div>
+    <h3>Danger zone</h3>
+    <button class="btn danger" data-p="delnode">Delete this section</button>`;
+}
+function editKid(n, k){
+  return `<h2 style="margin-top:0">Edit card</h2>
+    <label class="f">Title</label><input class="inp" data-f="k.title" value="${esc(k.title)}">
+    <label class="f">Status</label><select class="inp" data-f="k.status">${STATUSES.map(s => `<option ${s === (k.status || 'note') ? 'selected' : ''}>${s}</option>`).join('')}</select>
+    <label class="f">Details</label><textarea class="inp tall" data-f="k.body">${esc(k.body)}</textarea>
+    <label class="f">Discussion notes</label><textarea class="inp" data-f="k.notes" placeholder="Notes from chats, advisor meetings, papers…">${esc(k.notes)}</textarea>
+    <div class="hint">Supports **bold**, *italic*, \`code\`, - lists, 1. lists, [links](https://…)</div>
+    <label class="f">Section</label><select class="inp" data-p-change="movekid">${data.nodes.map(o => `<option value="${esc(o.id)}" ${o.id === n.id ? 'selected' : ''}>${esc(o.title)}</option>`).join('')}</select>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" data-p="up">↑ Move up</button>
+      <button class="btn" data-p="down">↓ Move down</button>
+      <button class="btn" data-p="dupkid">Duplicate</button>
+      <span style="flex:1"></span>
+      <button class="btn danger" data-p="delkid">Delete</button>
+    </div>`;
+}
+pb.addEventListener('input', e => {
+  const f = e.target.dataset.f, n = state.sel && nodeById(state.sel.node);
+  if (e.target.dataset.edge !== undefined) { data.edges[+e.target.dataset.edge].label = e.target.value; changed(); return; }
+  if (!f || !n) return;
+  const [obj, key] = f.split('.');
+  const target = obj === 'n' ? n : n.children.find(c => c.id === state.sel.kid);
+  if (!target) return;
+  target[key] = e.target.value;
+  changed();
+  if (key === 'title' || key === 'cat') { $('#crumb').innerHTML = obj === 'k' ? `<a data-p="node">${esc(n.title)}</a> &nbsp;›&nbsp; ${esc(target.title)}` : esc((CATS[n.cat] || CATS.core).label); panel.style.setProperty('--c', catColor(n.cat)); renderLegend(); }
+});
+pb.addEventListener('change', e => {
+  if (e.target.dataset.pChange === 'movekid') {
+    const n = nodeById(state.sel.node), k = n.children.find(c => c.id === state.sel.kid), to = nodeById(e.target.value);
+    if (!k || !to || to === n) return;
+    n.children.splice(n.children.indexOf(k), 1); to.children.push(k);
+    state.sel.node = to.id; changed(); renderPanel(); toast('Moved to ' + to.title);
+  }
+});
+panel.addEventListener('click', e => {
+  const t = e.target.closest('[data-p]'); if (!t) return;
+  const act = t.dataset.p, n = state.sel && nodeById(state.sel.node); if (!n) return;
+  const k = state.sel.kid && n.children.find(c => c.id === state.sel.kid);
+  const i = k ? n.children.indexOf(k) : -1;
+  switch (act) {
+    case 'node': state.sel.kid = null; renderPanel(); renderWorld(); break;
+    case 'kid': select(n.id, t.dataset.kid); break;
+    case 'goto': select(t.dataset.node, null, { focus:true }); break;
+    case 'prev': if (i > 0) select(n.id, n.children[i - 1].id); break;
+    case 'next': if (i < n.children.length - 1) select(n.id, n.children[i + 1].id); break;
+    case 'addkid': addKid(n); break;
+    case 'up': if (i > 0) { n.children.splice(i - 1, 0, n.children.splice(i, 1)[0]); changed(); } break;
+    case 'down': if (i < n.children.length - 1) { n.children.splice(i + 1, 0, n.children.splice(i, 1)[0]); changed(); } break;
+    case 'dupkid': { const c = clone(k); c.id = uid('k'); c.title += ' (copy)'; n.children.splice(i + 1, 0, c); changed(); select(n.id, c.id); break; }
+    case 'delkid': if (confirmDel('Delete card "' + k.title + '"?')) { n.children.splice(i, 1); state.sel.kid = null; changed(); renderPanel(); } break;
+    case 'delnode': if (confirmDel('Delete section "' + n.title + '" and its ' + n.children.length + ' cards?')) { data.nodes = data.nodes.filter(x => x !== n); data.edges = data.edges.filter(x => x.from !== n.id && x.to !== n.id); changed(); closePanel(); renderLegend(); } break;
+    case 'addedge': { const to = $('#newedge').value; if (to && !data.edges.some(x => x.from === n.id && x.to === to)) { data.edges.push({ from:n.id, to, label:'' }); changed(); renderPanel(); } break; }
+    case 'deledge': data.edges.splice(+t.dataset.i, 1); changed(); renderPanel(); break;
+  }
+});
+// inline two-click confirm (avoids blocking browser dialogs)
+let pendingDel = null;
+function confirmDel(msg){ if (pendingDel === msg) { pendingDel = null; return true; } pendingDel = msg; toast(msg + ' Click again to confirm.'); setTimeout(() => { if (pendingDel === msg) pendingDel = null; }, 4000); return false; }
+function addKid(n){
+  const k = { id:uid('k'), title:'New card', status:'todo', body:'', notes:'' };
+  n.children.push(k); changed(); select(n.id, k.id);
+  setTimeout(() => { const el = pb.querySelector('[data-f="k.title"]'); if (el) { el.focus(); el.select(); } }, 30);
+}
+function addNode(){
+  const { w, h } = vpSize();
+  const n = { id:uid('n'), cat:'core', title:'New section', summary:'', notes:'', children:[],
+    x: Math.round((w / 2 - view.x) / view.s - W / 2), y: Math.round((h / 2 - view.y) / view.s - 150) };
+  data.nodes.push(n); changed(); renderLegend(); select(n.id);
+  setTimeout(() => { const el = pb.querySelector('[data-f="n.title"]'); if (el) { el.focus(); el.select(); } }, 30);
+}
+
+// ---------- pointer: pan / drag / click ----------
+const ptrs = new Map(); let gesture = null;
+vp.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  vp.setPointerCapture(e.pointerId);
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; gesture = { type:'pinch', d:Math.hypot(a.x - b.x, a.y - b.y), s:view.s }; return; }
+  const actEl = e.target.closest('[data-act]'), nodeEl = e.target.closest('.node');
+  const n = nodeEl && nodeById(nodeEl.dataset.id);
+  const drag = state.edit && actEl && actEl.dataset.act === 'head' && n;
+  gesture = { type: drag ? 'drag' : 'pan', x0:e.clientX, y0:e.clientY, vx:view.x, vy:view.y, n, nx:n && n.x, ny:n && n.y, el:nodeEl, actEl, moved:false };
+  cancelAnimationFrame(anim);
+});
+vp.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId) || !gesture) return;
+  ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (gesture.type === 'pinch' && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), r = vp.getBoundingClientRect();
+    zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, (gesture.s * d / gesture.d) / view.s); return;
+  }
+  const dx = e.clientX - gesture.x0, dy = e.clientY - gesture.y0;
+  if (!gesture.moved && Math.hypot(dx, dy) > 4) { gesture.moved = true; if (gesture.type === 'pan') vp.classList.add('panning'); }
+  if (!gesture.moved) return;
+  if (gesture.type === 'pan') { view.x = gesture.vx + dx; view.y = gesture.vy + dy; applyView(); }
+  else { gesture.n.x = Math.round(gesture.nx + dx / view.s); gesture.n.y = Math.round(gesture.ny + dy / view.s); gesture.el.style.left = gesture.n.x + 'px'; gesture.el.style.top = gesture.n.y + 'px'; drawEdges(); }
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if (!gesture) return;
+  if (gesture.type === 'pinch') { if (ptrs.size === 0) gesture = null; return; }
+  const g = gesture; gesture = null; vp.classList.remove('panning');
+  if (g.moved) { if (g.type === 'drag') changed(false); return; }
+  if (e.type === 'pointercancel') return;
+  const act = g.actEl && g.actEl.dataset.act, n = g.n || (g.el && nodeById(g.el.dataset.id));
+  if (act === 'kid') select(n.id, g.actEl.dataset.kid, { focus: view.s < 0.5 });
+  else if (act === 'addkid') addKid(n);
+  else if (n) select(n.id, null, { focus:true });
+  else if (panel.classList.contains('open') && !state.edit) closePanel();
+}
+vp.addEventListener('pointerup', endPtr);
+vp.addEventListener('pointercancel', endPtr);
+vp.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = vp.getBoundingClientRect();
+  if (e.ctrlKey || e.metaKey || e.deltaMode || Math.abs(e.deltaX) < 1) zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0016)));
+  else { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); } // trackpad two-finger pan
+}, { passive:false });
+
+// ---------- toolbar ----------
+function setEdit(on){
+  state.edit = on; $('#b-edit').classList.toggle('on', on); $('#b-add').style.display = on ? '' : 'none';
+  renderWorld(); renderPanel(); toast(on ? 'Edit mode: drag headers to move, edit in the panel' : 'Edit mode off');
+}
+$('#b-edit').onclick = () => setEdit(!state.edit);
+$('#b-add').onclick = addNode;
+$('#b-fit').onclick = fitAll;
+$('#z-in').onclick = () => { const { w, h } = vpSize(); zoomAt(w / 2, h / 2, 1.35); };
+$('#z-out').onclick = () => { const { w, h } = vpSize(); zoomAt(w / 2, h / 2, 1 / 1.35); };
+$('#p-close').onclick = closePanel;
+$('#crumb').addEventListener('click', e => { if (e.target.closest('[data-p="node"]')) { state.sel.kid = null; renderPanel(); renderWorld(); } });
+$('#b-menu').onclick = e => { e.stopPropagation(); $('#m-file').classList.toggle('open'); };
+document.addEventListener('click', () => $('#m-file').classList.remove('open'));
+$('#m-file .menu-list').onclick = e => {
+  const b = e.target.closest('[data-m]'); if (!b) return;
+  ({ html:exportHTML, json:exportJSON, import:() => $('#file').click(), reset:resetLocal, help:() => $('#help').classList.add('open') })[b.dataset.m]();
+};
+$('#help').onclick = e => { if (e.target.id === 'help') $('#help').classList.remove('open'); };
+
+function download(name, text, type){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportHTML(){
+  const A = '/*DATA_' + 'START*/', B = '/*DATA_' + 'END*/';
+  const i = SOURCE.indexOf(A), j = SOURCE.indexOf(B);
+  if (i < 0 || j < 0) return toast('Could not find the data block in this page.');
+  const json = JSON.stringify(data, null, 1).replace(/<\//g, '<\\/');
+  download('index.html', SOURCE.slice(0, i + A.length) + json + SOURCE.slice(j), 'text/html');
+  toast('Downloaded index.html - commit it to your repo to publish');
+}
+function exportJSON(){ download('roadmap.json', JSON.stringify(data, null, 2), 'application/json'); }
+$('#file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const d = JSON.parse(await f.text()); if (!Array.isArray(d.nodes)) throw new Error('no nodes'); data = d; data.meta = data.meta || {}; changed(); renderLegend(); closePanel(); setTitle(); fitAll(); toast('Imported ' + f.name); }
+  catch (err) { toast('Import failed: ' + err.message); }
+  e.target.value = '';
+};
+function resetLocal(){
+  if (!confirmDel('Discard all local edits?')) return;
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  data = clone(BAKED); renderLegend(); closePanel(); setTitle(); fitAll(); toast('Reverted to published version');
+}
+
+// ---------- search ----------
+let firstHit = null;
+$('#q').addEventListener('input', e => {
+  state.q = e.target.value.trim().toLowerCase();
+  renderWorld();
+  firstHit = null;
+  if (state.q) for (const n of data.nodes) {
+    const kk = n.children.find(k => matches(k.title) || matches(k.body) || matches(k.notes));
+    if (kk || matches(n.title) || matches(n.summary) || matches(n.notes)) { firstHit = { n, k:kk }; break; }
+  }
+});
+$('#q').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && firstHit) { select(firstHit.n.id, firstHit.k ? firstHit.k.id : null, { focus:true }); }
+  if (e.key === 'Escape') { e.target.value = ''; state.q = ''; renderWorld(); e.target.blur(); }
+});
+
+// ---------- keyboard ----------
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if (typing) return;
+  if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
+  else if (e.key === 'Escape') { if ($('#help').classList.contains('open')) $('#help').classList.remove('open'); else if (panel.classList.contains('open')) closePanel(); else fitAll(); }
+  else if (e.key === 'f' || e.key === 'F') fitAll();
+  else if (e.key === 'e' || e.key === 'E') setEdit(!state.edit);
+  else if (e.key === '?') $('#help').classList.add('open');
+  else if (e.key === '+' || e.key === '=') $('#z-in').click();
+  else if (e.key === '-' || e.key === '_') $('#z-out').click();
+});
+window.addEventListener('beforeunload', () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} });
+window.addEventListener('resize', () => applyView());
+
+// ---------- toast / init ----------
+let toastT;
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+function setTitle(){ $('#t-title').textContent = data.meta.title || 'Roadmap'; $('#t-sub').textContent = data.meta.subtitle || ''; document.title = data.meta.title || 'Roadmap'; }
+autoLayout();
+setTitle();
+renderWorld();
+renderLegend();
+const t = targetFor(bounds(data.nodes), 1); Object.assign(view, t); applyView();
+})();
+</script>
+</body>
+</html>
